@@ -1,5 +1,6 @@
-print(prop.test(2, 12))
-#kaheteistkümnest õpilasest on kaks poisid
-#mida sellest järeldada võin
-#vastus - kui neid mõnel teisel kursusel 12 õpilase hulgas on
-# 1 - 5, siis pole põhjust mingit eripära otsida
+print(prop.test(18, 100))
+
+# minu andmed
+# esimeses rühmas oli 18 õnnestumist 100 katsest
+# test näitab proportsiooni ja usaldusvahemikku
+# vahemiku piirid näitavad, millises vahemikus tegelik proportsioon võib olla
