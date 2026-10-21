@@ -1,0 +1,27 @@
+<!doctype html><html lang="et"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Euroopa riikide ajajoon</title><style>
+body{font-family:Arial,sans-serif;max-width:1100px;margin:28px auto;padding:0 18px;line-height:1.5;color:#202124}
+h1{color:#244a7c}button{padding:9px 14px;margin:5px;background:#2457a7;color:#fff;border:0;border-radius:5px;cursor:pointer}
+.card{border:1px solid #d9dfe7;border-radius:9px;padding:16px;margin:18px 0}.status{color:#555;margin:12px 0}
+table{border-collapse:collapse;width:100%;margin-top:12px;font-size:.95rem}th,td{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f1f5fa}
+.note{background:#f5f7fa;padding:12px;border-radius:6px}svg{max-width:100%;height:auto}
+</style><script>
+async function getData(query){
+ const url="https://query.wikidata.org/sparql?format=json&query="+encodeURIComponent(query);
+ const res=await fetch(url,{headers:{"Accept":"application/sparql-results+json"}});
+ if(!res.ok)throw new Error("HTTP "+res.status);
+ return (await res.json()).results.bindings;
+}
+function v(row,key){return row[key]?row[key].value:"";}
+function openQuery(q){window.open("https://query.wikidata.org/#"+encodeURIComponent(q),"_blank","noopener");}
+function table(id,rows,cols){
+ const out=document.getElementById(id);out.replaceChildren();
+ if(!rows.length){out.textContent="Tulemusi ei leitud.";return;}
+ const t=document.createElement("table"),h=document.createElement("tr");
+ cols.forEach(c=>{const th=document.createElement("th");th.textContent=c[1];h.appendChild(th)});
+ const hd=document.createElement("thead");hd.appendChild(h);t.appendChild(hd);
+ const b=document.createElement("tbody");
+ rows.forEach(r=>{const tr=document.createElement("tr");cols.forEach(c=>{const td=document.createElement("td");td.textContent=v(r,c[0]);tr.appendChild(td)});b.appendChild(tr)});
+ t.appendChild(b);out.replaceChildren(t);
+}
+function error(id,e){document.getElementById(id).textContent="Andmete laadimine ebaõnnestus. Proovi uuesti või ava SPARQL-päring eraldi. "+e.message;}
+</script></head><body><h1>Euroopa riikide ajajoon</h1><p>Ajajoon riikide tekkimise kuupäevadest, mis on märgitud Wikidatas omadusega inception.</p><section class="card"><button onclick="run()">Laadi ajajoon</button><button onclick="openQuery(Q)">Ava SPARQL-päring</button><div id="out" class="status">Vajuta nuppu.</div><div id="timeline"></div></section><p class="note">Riigi alguskuupäev võib tähendada eri ajaloolisi sündmusi. Kontrolli tulemusi.</p><p><a href="../README.md">README / juhend</a></p><script>const Q="SELECT ?country ?countryLabel ?date WHERE {\n ?country wdt:P31 wd:Q6256; wdt:P30 wd:Q46; wdt:P571 ?date.\n SERVICE wikibase:label { bd:serviceParam wikibase:language \"et,en\". }\n} ORDER BY ?date LIMIT 40";async function run(){try{const rows=await getData(Q);table("out",rows,[["date","Kuupäev"],["countryLabel","Riik"]]);const box=document.getElementById("timeline");box.replaceChildren();rows.forEach(r=>{const p=document.createElement("p");p.textContent=v(r,"date").slice(0,10)+" — "+v(r,"countryLabel");p.style.borderLeft="4px solid #4c83c3";p.style.padding="5px 10px";box.appendChild(p)});}catch(e){error("out",e)}}</script></body></html>

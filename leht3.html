@@ -1,0 +1,27 @@
+<!doctype html><html lang="et"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Euroopa riikide naabrusvõrgustik</title><style>
+body{font-family:Arial,sans-serif;max-width:1100px;margin:28px auto;padding:0 18px;line-height:1.5;color:#202124}
+h1{color:#244a7c}button{padding:9px 14px;margin:5px;background:#2457a7;color:#fff;border:0;border-radius:5px;cursor:pointer}
+.card{border:1px solid #d9dfe7;border-radius:9px;padding:16px;margin:18px 0}.status{color:#555;margin:12px 0}
+table{border-collapse:collapse;width:100%;margin-top:12px;font-size:.95rem}th,td{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f1f5fa}
+.note{background:#f5f7fa;padding:12px;border-radius:6px}svg{max-width:100%;height:auto}
+</style><script>
+async function getData(query){
+ const url="https://query.wikidata.org/sparql?format=json&query="+encodeURIComponent(query);
+ const res=await fetch(url,{headers:{"Accept":"application/sparql-results+json"}});
+ if(!res.ok)throw new Error("HTTP "+res.status);
+ return (await res.json()).results.bindings;
+}
+function v(row,key){return row[key]?row[key].value:"";}
+function openQuery(q){window.open("https://query.wikidata.org/#"+encodeURIComponent(q),"_blank","noopener");}
+function table(id,rows,cols){
+ const out=document.getElementById(id);out.replaceChildren();
+ if(!rows.length){out.textContent="Tulemusi ei leitud.";return;}
+ const t=document.createElement("table"),h=document.createElement("tr");
+ cols.forEach(c=>{const th=document.createElement("th");th.textContent=c[1];h.appendChild(th)});
+ const hd=document.createElement("thead");hd.appendChild(h);t.appendChild(hd);
+ const b=document.createElement("tbody");
+ rows.forEach(r=>{const tr=document.createElement("tr");cols.forEach(c=>{const td=document.createElement("td");td.textContent=v(r,c[0]);tr.appendChild(td)});b.appendChild(tr)});
+ t.appendChild(b);out.replaceChildren(t);
+}
+function error(id,e){document.getElementById(id).textContent="Andmete laadimine ebaõnnestus. Proovi uuesti või ava SPARQL-päring eraldi. "+e.message;}
+</script></head><body><h1>Euroopa riikide naabrusvõrgustik</h1><p>Sõlmed on Euroopa riigid ja ühendused tähistavad Wikidata naaberriigi seost.</p><section class="card"><button onclick="run()">Loo võrgustik</button><button onclick="openQuery(Q)">Ava SPARQL-päring</button><div id="out" class="status">Vajuta nuppu.</div><svg id="network" viewBox="0 0 900 620"></svg></section><p class="note">Gephi jaoks laadi päringu tulemused CSV-na ja impordi servade tabelina.</p><p><a href="../README.md">README / juhend</a></p><script>const Q="SELECT ?country ?countryLabel ?neighbor ?neighborLabel WHERE {\n ?country wdt:P31 wd:Q6256; wdt:P30 wd:Q46; wdt:P47 ?neighbor.\n ?neighbor wdt:P31 wd:Q6256; wdt:P30 wd:Q46.\n SERVICE wikibase:label { bd:serviceParam wikibase:language \"et,en\". }\n FILTER(STR(?country) < STR(?neighbor))\n} LIMIT 100";async function run(){try{const rows=await getData(Q);table("out",rows,[["countryLabel","Riik"],["neighborLabel","Naaberriik"]]);const s=document.getElementById("network");s.replaceChildren();const ns="http://www.w3.org/2000/svg",nodes=[...new Set(rows.flatMap(r=>[v(r,"country"),v(r,"neighbor")]))],labels={};rows.forEach(r=>{labels[v(r,"country")]=v(r,"countryLabel");labels[v(r,"neighbor")]=v(r,"neighborLabel")});const pos={};nodes.forEach((n,i)=>{const a=2*Math.PI*i/nodes.length;pos[n]={x:450+350*Math.cos(a),y:310+240*Math.sin(a)}});rows.forEach(r=>{const a=pos[v(r,"country")],b=pos[v(r,"neighbor")],l=document.createElementNS(ns,"line");l.setAttribute("x1",a.x);l.setAttribute("y1",a.y);l.setAttribute("x2",b.x);l.setAttribute("y2",b.y);l.setAttribute("stroke","#b5c2d1");s.appendChild(l)});nodes.forEach(n=>{const p=pos[n],c=document.createElementNS(ns,"circle");c.setAttribute("cx",p.x);c.setAttribute("cy",p.y);c.setAttribute("r",7);c.setAttribute("fill","#2457a7");s.appendChild(c);const t=document.createElementNS(ns,"text");t.setAttribute("x",p.x+9);t.setAttribute("y",p.y+4);t.setAttribute("font-size",11);t.textContent=labels[n];s.appendChild(t)});}catch(e){error("out",e)}}</script></body></html>

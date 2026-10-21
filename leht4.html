@@ -1,0 +1,27 @@
+<!doctype html><html lang="et"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Euroopa riigid: pindala ja rahvaarv</title><style>
+body{font-family:Arial,sans-serif;max-width:1100px;margin:28px auto;padding:0 18px;line-height:1.5;color:#202124}
+h1{color:#244a7c}button{padding:9px 14px;margin:5px;background:#2457a7;color:#fff;border:0;border-radius:5px;cursor:pointer}
+.card{border:1px solid #d9dfe7;border-radius:9px;padding:16px;margin:18px 0}.status{color:#555;margin:12px 0}
+table{border-collapse:collapse;width:100%;margin-top:12px;font-size:.95rem}th,td{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f1f5fa}
+.note{background:#f5f7fa;padding:12px;border-radius:6px}svg{max-width:100%;height:auto}
+</style><script>
+async function getData(query){
+ const url="https://query.wikidata.org/sparql?format=json&query="+encodeURIComponent(query);
+ const res=await fetch(url,{headers:{"Accept":"application/sparql-results+json"}});
+ if(!res.ok)throw new Error("HTTP "+res.status);
+ return (await res.json()).results.bindings;
+}
+function v(row,key){return row[key]?row[key].value:"";}
+function openQuery(q){window.open("https://query.wikidata.org/#"+encodeURIComponent(q),"_blank","noopener");}
+function table(id,rows,cols){
+ const out=document.getElementById(id);out.replaceChildren();
+ if(!rows.length){out.textContent="Tulemusi ei leitud.";return;}
+ const t=document.createElement("table"),h=document.createElement("tr");
+ cols.forEach(c=>{const th=document.createElement("th");th.textContent=c[1];h.appendChild(th)});
+ const hd=document.createElement("thead");hd.appendChild(h);t.appendChild(hd);
+ const b=document.createElement("tbody");
+ rows.forEach(r=>{const tr=document.createElement("tr");cols.forEach(c=>{const td=document.createElement("td");td.textContent=v(r,c[0]);tr.appendChild(td)});b.appendChild(tr)});
+ t.appendChild(b);out.replaceChildren(t);
+}
+function error(id,e){document.getElementById(id).textContent="Andmete laadimine ebaõnnestus. Proovi uuesti või ava SPARQL-päring eraldi. "+e.message;}
+</script></head><body><h1>Euroopa riigid: pindala ja rahvaarv</h1><p>Hajuvusdiagramm võrdleb Euroopa riikide pindala ja rahvaarvu.</p><section class="card"><button onclick="run()">Laadi andmed ja diagramm</button><button onclick="openQuery(Q)">Ava SPARQL-päring</button><div id="out" class="status">Vajuta nuppu.</div><svg id="scatter" viewBox="0 0 900 520"></svg></section><p><a href="../README.md">README / juhend</a></p><script>const Q="SELECT ?country ?countryLabel ?area ?population WHERE {\n ?country wdt:P31 wd:Q6256; wdt:P30 wd:Q46; wdt:P2046 ?area; wdt:P1082 ?population.\n SERVICE wikibase:label { bd:serviceParam wikibase:language \"et,en\". }\n} ORDER BY DESC(?population) LIMIT 30";async function run(){try{const rows=await getData(Q);table("out",rows,[["countryLabel","Riik"],["area","Pindala"],["population","Rahvaarv"]]);const s=document.getElementById("scatter");s.replaceChildren();const ns="http://www.w3.org/2000/svg",data=rows.map(r=>({x:+v(r,"area"),y:+v(r,"population"),n:v(r,"countryLabel")})).filter(p=>p.x>0&&p.y>0);const mx=Math.max(...data.map(p=>p.x)),my=Math.max(...data.map(p=>p.y));const ax=70,ay=440,w=770,h=390;function line(x1,y1,x2,y2){const l=document.createElementNS(ns,"line");l.setAttribute("x1",x1);l.setAttribute("y1",y1);l.setAttribute("x2",x2);l.setAttribute("y2",y2);l.setAttribute("stroke","#666");s.appendChild(l)}line(ax,ay,ax+w,ay);line(ax,ay,ax,ay-h);data.forEach(p=>{const x=ax+p.x/mx*w,y=ay-p.y/my*h,c=document.createElementNS(ns,"circle");c.setAttribute("cx",x);c.setAttribute("cy",y);c.setAttribute("r",5);c.setAttribute("fill","#d06b35");s.appendChild(c);const t=document.createElementNS(ns,"text");t.setAttribute("x",x+6);t.setAttribute("y",y-5);t.setAttribute("font-size",10);t.textContent=p.n;s.appendChild(t)});const tx=document.createElementNS(ns,"text");tx.setAttribute("x",320);tx.setAttribute("y",500);tx.textContent="Pindala (lineaarne skaala)";s.appendChild(tx);const ty=document.createElementNS(ns,"text");ty.setAttribute("x",8);ty.setAttribute("y",25);ty.textContent="Rahvaarv";s.appendChild(ty);}catch(e){error("out",e)}}</script></body></html>

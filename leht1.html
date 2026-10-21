@@ -1,0 +1,27 @@
+<!doctype html><html lang="et"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Euroopa riigid: rahvaarv</title><style>
+body{font-family:Arial,sans-serif;max-width:1100px;margin:28px auto;padding:0 18px;line-height:1.5;color:#202124}
+h1{color:#244a7c}button{padding:9px 14px;margin:5px;background:#2457a7;color:#fff;border:0;border-radius:5px;cursor:pointer}
+.card{border:1px solid #d9dfe7;border-radius:9px;padding:16px;margin:18px 0}.status{color:#555;margin:12px 0}
+table{border-collapse:collapse;width:100%;margin-top:12px;font-size:.95rem}th,td{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f1f5fa}
+.note{background:#f5f7fa;padding:12px;border-radius:6px}svg{max-width:100%;height:auto}
+</style><script>
+async function getData(query){
+ const url="https://query.wikidata.org/sparql?format=json&query="+encodeURIComponent(query);
+ const res=await fetch(url,{headers:{"Accept":"application/sparql-results+json"}});
+ if(!res.ok)throw new Error("HTTP "+res.status);
+ return (await res.json()).results.bindings;
+}
+function v(row,key){return row[key]?row[key].value:"";}
+function openQuery(q){window.open("https://query.wikidata.org/#"+encodeURIComponent(q),"_blank","noopener");}
+function table(id,rows,cols){
+ const out=document.getElementById(id);out.replaceChildren();
+ if(!rows.length){out.textContent="Tulemusi ei leitud.";return;}
+ const t=document.createElement("table"),h=document.createElement("tr");
+ cols.forEach(c=>{const th=document.createElement("th");th.textContent=c[1];h.appendChild(th)});
+ const hd=document.createElement("thead");hd.appendChild(h);t.appendChild(hd);
+ const b=document.createElement("tbody");
+ rows.forEach(r=>{const tr=document.createElement("tr");cols.forEach(c=>{const td=document.createElement("td");td.textContent=v(r,c[0]);tr.appendChild(td)});b.appendChild(tr)});
+ t.appendChild(b);out.replaceChildren(t);
+}
+function error(id,e){document.getElementById(id).textContent="Andmete laadimine ebaõnnestus. Proovi uuesti või ava SPARQL-päring eraldi. "+e.message;}
+</script></head><body><h1>Euroopa riigid: rahvaarv</h1><p>Minu näide: võrdlen Euroopa riikide rahvaarvu Wikidata andmete põhjal.</p><section class="card"><button onclick="run()">Laadi andmed ja joonis</button><button onclick="openQuery(Q)">Ava SPARQL-päring</button><div id="out" class="status">Vajuta nuppu.</div><svg id="chart" viewBox="0 0 900 520"></svg></section><p class="note">Rahvaarvu väärtused võivad pärineda eri aastatest.</p><p><a href="../README.md">README / juhend</a></p><script>const Q="SELECT ?country ?countryLabel ?population WHERE {\n ?country wdt:P31 wd:Q6256; wdt:P30 wd:Q46; wdt:P1082 ?population.\n SERVICE wikibase:label { bd:serviceParam wikibase:language \"et,en\". }\n} ORDER BY DESC(?population) LIMIT 15"; async function run(){try{const rows=await getData(Q);table("out",rows,[["countryLabel","Riik"],["population","Rahvaarv"]]);const s=document.getElementById("chart");s.replaceChildren();const ns="http://www.w3.org/2000/svg",max=Math.max(...rows.map(r=>+v(r,"population")||0));rows.forEach((r,i)=>{const y=15+i*32,n=document.createElementNS(ns,"text");n.setAttribute("x",190);n.setAttribute("y",y+16);n.setAttribute("text-anchor","end");n.setAttribute("font-size","12");n.textContent=v(r,"countryLabel");s.appendChild(n);const b=document.createElementNS(ns,"rect");b.setAttribute("x",200);b.setAttribute("y",y);b.setAttribute("height",21);b.setAttribute("width",Math.max(1,+v(r,"population")/max*620));b.setAttribute("fill","#4c83c3");s.appendChild(b);});}catch(e){error("out",e)}}</script></body></html>
