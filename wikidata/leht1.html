@@ -1,0 +1,51 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Minu Wikidata päring</title>
+    <script>
+        function kysi() {
+            let lause = `
+                SELECT ?riik ?riikLabel
+                WHERE {
+                    ?riik wdt:P31 wd:Q6256.
+                    ?riik wdt:P30 wd:Q46.
+
+                    SERVICE wikibase:label {
+                        bd:serviceParam
+                        wikibase:language "en".
+                    }
+                }
+                LIMIT 10
+            `;
+
+            let aadress =
+                "https://query.wikidata.org/sparql?format=json&query="
+                + encodeURIComponent(lause);
+
+            fetch(aadress)
+                .then(d => d.json())
+                .then(kuva)
+                .catch(err => {
+                    document.getElementById("vastus").textContent =
+                        "Andmete laadimine ebaõnnestus.";
+                });
+        }
+
+        function kuva(d) {
+            let vastus = document.getElementById("vastus");
+            vastus.textContent = "";
+
+            for (let rida of d.results.bindings) {
+                vastus.textContent +=
+                    rida.riikLabel.value + "\n";
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>Euroopa riigid</h1>
+    <input type="button" value="Otsi" onclick="kysi()">
+    <pre id="vastus"></pre>
+</body>
+</html>
