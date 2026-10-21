@@ -1,0 +1,57 @@
+
+<!doctype html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Euroopa riikide rahvaarv</title>
+    <script>
+        function kysi() {
+            let lause = `
+                #defaultView:BarChart
+                SELECT ?riikLabel (MAX(?rahvaarv) AS ?arv)
+                WHERE {
+                    ?riik wdt:P31 wd:Q6256.
+                    ?riik wdt:P30 wd:Q46.
+                    ?riik wdt:P1082 ?rahvaarv.
+
+                    SERVICE wikibase:label {
+                        bd:serviceParam
+                        wikibase:language "en".
+                    }
+                }
+                GROUP BY ?riikLabel
+                ORDER BY DESC(?arv)
+                LIMIT 15
+            `;
+
+            let aadress =
+                "https://query.wikidata.org/sparql?format=json&query="
+                + encodeURIComponent(lause);
+
+            fetch(aadress)
+                .then(d => d.json())
+                .then(kuva)
+                .catch(err => {
+                    document.getElementById("vastus").textContent =
+                        "Andmete laadimine ebaõnnestus.";
+                });
+        }
+
+        function kuva(d) {
+            let vastus = document.getElementById("vastus");
+            vastus.textContent = "";
+
+            for (let rida of d.results.bindings) {
+                vastus.textContent +=
+                    rida.riikLabel.value + ": " +
+                    rida.arv.value + "\n";
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>Euroopa riikide rahvaarv</h1>
+    <input type="button" value="Otsi" onclick="kysi()">
+    <pre id="vastus"></pre>
+</body>
+</html>
